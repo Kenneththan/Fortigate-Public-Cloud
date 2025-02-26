@@ -1,0 +1,143 @@
+config system interface
+edit "AWS_DC"
+set vdom "root"
+set ip 10.10.30.33 255.255.255.255
+set allowaccess ping
+set type tunnel
+set remote-ip 10.10.30.38 255.255.255.248
+set snmp-index 19
+set interface "port6"
+next
+end
+
+config vpn ipsec phase1-interface
+edit "AWS_DC"
+set interface "port6"
+set mode aggressive
+set peertype any
+set net-device enable
+set proposal aes256-sha512 aes256-sha256
+set localid "DC_IPSec"
+set dpd on-idle
+set xauthtype client
+set authusr "AWS_DC"
+set authpasswd ENC YmPLIebEOXdk+uyO/9MkMv+Ecm/dOe4SzXiEvwaGuyeW2jp2/WrL+ebm7p0fNbfzOE5+qDyqkM2bLlrVoHLqlFFKD/0cyBRUV7bkCtE48jEsTrNljltVrqo7Apadfc7ThlC7YoCW6ofn27uGy+V7OlbYOKB3D5gvv92d79utuZVR2i5oZ3wjN+6IMMLe2qaO7ELMrA==
+set auto-discovery-sender enable
+set remote-gw 1.1.1.1
+set psksecret ENC Cv9pDSrsQhRBdRNYVcjspyqIec67oAcPYxc/Gf422AHw1UwoWBi7Ij1F3eCMCeuyyJ72MCGtKZjlmyOAy/ipNSB08TxHoVsGxOF9UQ7t4ADxiMhtuCb1AZ73LrwkaoxcENGLvjw4tlPpMiSwTMKUdv5N3p3CYT2XTXw9aPh7z+pmam4Cu1sRMSCoon3Bv57/PLE9mA==
+next
+end
+
+config vpn ipsec phase2-interface
+edit "AWS_DC"
+set phase1name "AWS_DC"
+set proposal aes256-sha512 aes256-sha256
+set auto-negotiate enable
+next
+end
+
+config router access-list
+edit "AWS_DC"
+config rule
+edit 1
+set prefix 10.10.2.0 255.255.255.0
+next
+end
+next
+end
+
+config router prefix-list
+edit "AWS_IN"
+config rule
+edit 1
+set prefix 0.0.0.0 0.0.0.0
+unset ge
+set le 32
+next
+end
+next
+edit "AWS_OUT"
+config rule
+edit 1
+set prefix 0.0.0.0 0.0.0.0
+unset ge
+set le 32
+next
+end
+next
+end
+
+config router route-map
+edit "AWS_IN"
+config rule
+edit 1
+set match-ip-address "AWS_IN"
+unset set-ip-nexthop
+unset set-ip6-nexthop
+unset set-ip6-nexthop-local
+unset set-originator-id
+next
+end
+next
+edit "AWS_OUT"
+config rule
+edit 1
+set match-ip-address "AWS_OUT"
+unset set-ip-nexthop
+unset set-ip6-nexthop
+unset set-ip6-nexthop-local
+set set-metric 100
+unset set-originator-id
+next
+end
+next
+end
+
+config router bgp
+set as 65400
+set router-id 0.0.0.3
+set network-import-check disable
+set graceful-restart enable
+config neighbor
+edit "10.10.30.38"
+set link-down-failover enable
+set soft-reconfiguration enable
+set remote-as 65400
+set route-map-in "AWS_IN"
+set route-map-out "AWS_OUT"
+next
+end
+config network
+edit 1
+set prefix 172.16.100.0 255.255.255.0
+next
+edit 2
+set prefix 10.10.30.0 255.255.255.248
+next
+edit 3
+set prefix 10.10.30.16 255.255.255.248
+next
+end
+config redistribute "connected"
+end
+config redistribute "rip"
+end
+config redistribute "ospf"
+end
+config redistribute "static"
+end
+config redistribute "isis"
+end
+config redistribute6 "connected"
+end
+config redistribute6 "rip"
+end
+config redistribute6 "ospf"
+end
+config redistribute6 "static"
+end
+config redistribute6 "isis"
+end
+set graceful-restart-time 1
+set graceful-update-delay 10
+end
